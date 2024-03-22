@@ -71,7 +71,7 @@ client.on(Events.InteractionCreate, async interaction => {
 process.on('uncaughtException', function (err)
 {
 	setTimeout( function() {
-		logger.error("*uncaughtException(), Exception : " + err.stack);
+		logger.error("Exception : " + err.stack);
 		process.exit(1);
 	}, 1000);
 })
