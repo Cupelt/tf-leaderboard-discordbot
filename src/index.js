@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
+const logger = require("./logger")
 require('dotenv').config()
 
 const client = new Client({ 
@@ -27,7 +28,7 @@ for (const folder of commandFolders) {
 		if ('data' in command && 'execute' in command) {
 			client.commands.set(command.data.name, command);
 		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+			logger.info(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}
 	}
 }
@@ -50,14 +51,14 @@ client.on(Events.InteractionCreate, async interaction => {
     const command = interaction.client.commands.get(interaction.commandName);
 
     if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found`);
+        logger.error(`No command matching ${interaction.commandName} was found`);
         return;
     }
 
     try {
         await command.execute(interaction);
     } catch(error) {
-        console.error(error);
+        logger.error(error);
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
         } else {
@@ -66,5 +67,13 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
 });
+
+process.on('uncaughtException', function (err)
+{
+	setTimeout( function() {
+		logger.error("*uncaughtException(), Exception : " + err.stack);
+		process.exit(1);
+	}, 1000);
+})
 
 client.login(process.env.TOKEN);

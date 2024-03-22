@@ -1,11 +1,12 @@
 const { Events } = require('discord.js');
-const { register } = require('../command_register')
+const { register } = require('../command_register');
+const logger = require("../logger");
 
 module.exports = {
 	name: Events.ClientReady,
 	once: true,
 	execute(client) {
         register();
-		console.log(`Ready! Logged in as ${client.user.tag}`);
+		logger.info(`Ready! Logged in as ${client.user.tag}`);
 	},
 };
