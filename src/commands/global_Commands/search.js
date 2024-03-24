@@ -47,7 +47,7 @@ function createPageButton(data, now_page, page_length) {
                 .setCustomId('page_count_' + btn_symbols[i].page)
                 .setStyle(ButtonStyle.Primary)
                 .setEmoji(btn_symbols[i].symbol)
-                .setDisabled(now_page + btn_symbols[i].page <= 0 || now_page + btn_symbols[i].page >= (page_length - 1))
+                .setDisabled(now_page + btn_symbols[i].page < 0 || now_page + btn_symbols[i].page >= (page_length - 1))
         );
     }
 
