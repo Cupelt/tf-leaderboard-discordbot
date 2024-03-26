@@ -108,7 +108,7 @@ module.exports = {
         });
 
         collector.on('end', async () => {
-            response.edit({ components: []})
+            await interaction.editReply({ components: []})
         })
     }
 }
