@@ -89,7 +89,7 @@ module.exports = {
         });
 
         const collector = response.createMessageComponentCollector({
-            fillter: i => i.user.id === interaction.user.id,
+            filter: i => i.user.id === interaction.user.id,
             componentType: ComponentType.Button, 
             idle: 20_000
         });
