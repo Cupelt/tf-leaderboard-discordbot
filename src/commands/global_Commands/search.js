@@ -63,7 +63,7 @@ module.exports = {
                 .setDescription("유저를 검색합니다. ( * <= 전체검색 )")
                 .setRequired(true)),
     async execute(interaction) {
-        interaction.deferReply();
+        await interaction.deferReply();
         
         let name_tag = interaction.options.getString('검색어');
         if (name_tag === '*'){
