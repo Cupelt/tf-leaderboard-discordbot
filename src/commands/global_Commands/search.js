@@ -8,7 +8,7 @@ function createEmbed(data) {
 
     return new EmbedBuilder()
         .setColor(rank_color[Math.floor((data.leagueNumber - 1) / 4)])
-        .setTitle(`#${data.rank} - 『${data.steamName}』`)
+        .setTitle(`#${data.rank} - 『${data.steamName != "" ? data.steamName : data.xboxName != "" ? data.xboxName : data.psnName}』`)
         .setAuthor({ name: `TheFinals-CNS`, iconURL: `https://cdn.discordapp.com/avatars/1219832567570890833/889af2fc8b96fc95cf833a4395092813.webp?size=1024` })
         .setThumbnail(`https://storage.googleapis.com/embark-discovery-leaderboard/img/thumbs/${data.league.toLowerCase().replaceAll(" ", "-")}-thumb.png`)
         .addFields(
