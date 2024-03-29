@@ -1,4 +1,15 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ComponentType } = require('discord.js');
+const { 
+    SlashCommandBuilder, 
+    EmbedBuilder, 
+    ButtonBuilder, 
+    ButtonStyle, 
+    ActionRowBuilder, 
+    ComponentType, 
+    ModalBuilder, 
+    TextInputBuilder,
+    TextInputStyle 
+} = require('discord.js');
+
 const { request } = require('undici');  
 const path = require('node:path');
 const logger = require("../../logger")
@@ -24,7 +35,7 @@ function createPageButton(data, now_page, page_length) {
         .setCustomId('page_count')
         .setLabel(`${now_page + 1} / ${page_length}`)
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(true);
+        .setDisabled(page_length === 1);
 
     const btn_symbols = [
         {symbol: '⏪', page: -10},
@@ -94,16 +105,62 @@ module.exports = {
             idle: 20_000
         });
 
-        collector.on('collect', async i => {
-            const component = i.component;
+        collector.on('collect', async (collected_interaction) => {
+            const component = collected_interaction.component;
 
-            now_page += Number(component.customId.replaceAll('page_count_', ""));
-            data = rank_data.data[now_page]
+            if (component.customId === 'page_count') {
+                const modal = new ModalBuilder()
+                    .setCustomId(`move_page_${interaction.user.id}`)
+                    .setTitle('페이지 이동');
+                
+                const page_input = new TextInputBuilder()
+                    .setCustomId(`inputed_page`)
+                    .setMaxLength(5)
+                    .setMinLength(1)
+                    .setLabel("이동할 페이지를 입력하세요.")
+                    .setPlaceholder(`1~${page_length} / 현재 페이지 ${now_page + 1}`)
+                    .setStyle(TextInputStyle.Short)
+                    .setRequired(true);
+                
+                await collected_interaction.showModal(modal.addComponents(new ActionRowBuilder().addComponents(page_input)));
+
+                const modal_filter = (i) => i.customId === `move_page_${i.user.id}`
+                let is_modal_faild = false;
+                await collected_interaction
+                    .awaitModalSubmit({ modal_filter, time: 20_000 })
+                    .then((modal_interaction) => {
+                        inputed_page = modal_interaction.fields.getTextInputValue('inputed_page');
+
+                        regex = /^0*[1-9]\d*$/;
+                        if (regex.test(inputed_page) && Number(inputed_page) <= page_length) {
+                            now_page = Number(inputed_page) - 1;
+                            data = rank_data.data[now_page]
+
+                            modal_interaction.update({
+                                embeds: [createEmbed(data)],
+                                components: [createPageButton(data, now_page, page_length)],
+                            });
+                        } else {
+                            modal_interaction.reply({ content: `1 부터 ${page_length} 까지의 숫자만 입력해 주세요!`, ephemeral: true });
+                            is_modal_faild = true;
+                        }
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        is_modal_faild = true;
+                    });
+                
+                if (is_modal_faild) return;
+
+            } else {
+                now_page += Number(component.customId.replaceAll('page_count_', ""));
+                data = rank_data.data[now_page]
             
-            await i.update({
-                embeds: [createEmbed(data)],
-                components: [createPageButton(data, now_page, page_length)],
-            });
+                await collected_interaction.update({
+                    embeds: [createEmbed(data)],
+                    components: [createPageButton(data, now_page, page_length)],
+                });
+            }
 
         });
 
