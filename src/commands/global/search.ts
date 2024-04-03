@@ -1,4 +1,4 @@
-const { 
+import { 
     SlashCommandBuilder, 
     EmbedBuilder, 
     ButtonBuilder, 
@@ -7,15 +7,18 @@ const {
     ComponentType, 
     ModalBuilder, 
     TextInputBuilder,
-    TextInputStyle 
-} = require('discord.js');
+    TextInputStyle, 
+    ButtonComponent,
+    ModalSubmitInteraction,
+} from 'discord.js'
 
-const { request } = require('undici');  
-const path = require('node:path');
-const logger = require("../../logger")
+import { request } from 'undici'
+import logger from '../../utils/logger'
+import { SlashCommand } from '../../@types/client'
+import { LeaderboardData, UserData } from '../../@types/search'
 
-function createEmbed(data) {
-    const rank_color = [0xEA6500, 0xD9D9D9, 0xEBB259, 0xC9E3E7, 0x54EBE8]
+function createEmbed(data: UserData): EmbedBuilder {
+    const rank_color = [0xEA6500, 0xD9D9D9, 0xEBB259, 0xC9E3E7, 0x54EBE8];
 
     return new EmbedBuilder()
         .setColor(rank_color[Math.floor((data.leagueNumber - 1) / 4)])
@@ -30,7 +33,7 @@ function createEmbed(data) {
         .setFooter({ text: `${data.name}`, iconURL: 'https://cdn2.steamgriddb.com/logo/3dcf08bb1312cd37914637289ba97421.png' });
 }
 
-function createPageButton(data, now_page, page_length) {
+function createPageButton(data: UserData ,now_page: number, page_length: number): ActionRowBuilder<ButtonBuilder> {
     const page_count = new ButtonBuilder()
         .setCustomId('page_count')
         .setLabel(`${now_page + 1} / ${page_length}`)
@@ -49,7 +52,7 @@ function createPageButton(data, now_page, page_length) {
         
     for (let i = 0; i < btn_symbols.length; i++) {
         if  (btn_symbols[i].symbol == '/') {
-            action_rows.addComponents(page_count)
+            action_rows.addComponents(page_count);
             continue;
         }
 
@@ -62,18 +65,18 @@ function createPageButton(data, now_page, page_length) {
         );
     }
 
-    return action_rows;
+    return action_rows as ActionRowBuilder<ButtonBuilder>;
 }
 
-module.exports = {
-    data: new SlashCommandBuilder()
+const command: SlashCommand = {
+    data: <SlashCommandBuilder> new SlashCommandBuilder()
         .setName('전적검색')
         .setDescription('TheFinals의 랭크를 검색합니다 (최소순위 10000위)')
         .addStringOption(option => 
             option.setName("검색어")
                 .setDescription("유저를 검색합니다. ( * <= 전체검색 )")
                 .setRequired(true)),
-    async execute(interaction) {
+    execute: async (interaction) => {
         await interaction.deferReply();
         
         let name_tag = interaction.options.getString('검색어');
@@ -81,10 +84,11 @@ module.exports = {
             name_tag = '';
         }
 
-        const result = await request(`https://api.the-finals-leaderboard.com/v1/leaderboard/s2/crossplay?name=${name_tag}`)
-        const rank_data= await result.body.json()
+        const result = await request(`https://api.the-finals-leaderboard.com/v1/leaderboard/s2/crossplay?name=${name_tag}`);
+        const json = await result.body.json();
 
-        const page_length = rank_data.count;
+        const leaderboardData: LeaderboardData = json as LeaderboardData;
+        const page_length = leaderboardData.count;
 
         if (page_length === 0) {
             interaction.editReply("검색 결과가 없습니다 (ㅠ ㅠ)");
@@ -92,7 +96,7 @@ module.exports = {
         }
 
         let now_page = 0;
-        let data = rank_data.data[now_page]
+        let data: UserData = leaderboardData.data[now_page];
 
         const response = await interaction.editReply({
             embeds: [createEmbed(data)],
@@ -106,7 +110,7 @@ module.exports = {
         });
 
         collector.on('collect', async (collected_interaction) => {
-            const component = collected_interaction.component;
+            const component: ButtonComponent = collected_interaction.component as ButtonComponent;
 
             if (component.customId === 'page_count') {
                 const modal = new ModalBuilder()
@@ -122,21 +126,20 @@ module.exports = {
                     .setStyle(TextInputStyle.Short)
                     .setRequired(true);
                 
-                await collected_interaction.showModal(modal.addComponents(new ActionRowBuilder().addComponents(page_input)));
+                await collected_interaction.showModal(modal.addComponents(new ActionRowBuilder().addComponents(page_input) as ActionRowBuilder<TextInputBuilder>));
 
-                const modal_filter = (i) => i.customId === `move_page_${i.user.id}`
                 let is_modal_faild = false;
                 await collected_interaction
-                    .awaitModalSubmit({ modal_filter, time: 20_000 })
-                    .then((modal_interaction) => {
-                        inputed_page = modal_interaction.fields.getTextInputValue('inputed_page');
+                    .awaitModalSubmit({ filter: (i) => i.customId === `move_page_${i.user.id}`, time: 20_000 })
+                    .then((modal_interaction: ModalSubmitInteraction) => {
+                        const inputed_page = modal_interaction.fields.getTextInputValue('inputed_page');
 
-                        regex = /^0*[1-9]\d*$/;
+                        const regex = /^0*[1-9]\d*$/;
                         if (regex.test(inputed_page) && Number(inputed_page) <= page_length) {
                             now_page = Number(inputed_page) - 1;
-                            data = rank_data.data[now_page]
+                            data = leaderboardData.data[now_page];
 
-                            modal_interaction.update({
+                            collected_interaction.update({
                                 embeds: [createEmbed(data)],
                                 components: [createPageButton(data, now_page, page_length)],
                             });
@@ -153,8 +156,8 @@ module.exports = {
                 if (is_modal_faild) return;
 
             } else {
-                now_page += Number(component.customId.replaceAll('page_count_', ""));
-                data = rank_data.data[now_page]
+                now_page += Number(component.customId?.replaceAll('page_count_', ""));
+                data = leaderboardData.data[now_page]
             
                 await collected_interaction.update({
                     embeds: [createEmbed(data)],
@@ -165,7 +168,9 @@ module.exports = {
         });
 
         collector.on('end', async () => {
-            await interaction.editReply({ components: []})
+            await interaction.editReply({ components: []});
         })
     }
 }
+
+export default command;
