@@ -1,10 +1,9 @@
 import { Client, Collection, GatewayIntentBits, Events, SlashCommandBuilder } from "discord.js";
 import logger from "./utils/logger";
-import { config } from "dotenv";
+import "dotenv/config";
 import { SlashCommand } from "./@types/client";
 import { readdirSync } from "fs";
 import { join } from "path";
-config()
 
 const client: Client = new Client({ 
     intents: [
