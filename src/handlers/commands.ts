@@ -5,7 +5,6 @@ import { join } from "path";
 import { SlashCommand } from "../@types/client";
 import logger from "../utils/logger"
 
-
 module.exports = (client : Client) => {
     const global_slash_commands : SlashCommandBuilder[] = []
 
@@ -20,9 +19,9 @@ module.exports = (client : Client) => {
         logger.info(`Successfully loaded command ${command.data.name}`)
     })
 
-    const rest = new REST({version: "10"}).setToken(process.env.TOKEN);
+    const rest = new REST({version: "10"}).setToken(process.env.TOKEN!);
 
-    rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
+    rest.put(Routes.applicationCommands(process.env.CLIENT_ID!), {
         body: global_slash_commands.map(command => command.toJSON())
     })
     .then((data : any) => {
