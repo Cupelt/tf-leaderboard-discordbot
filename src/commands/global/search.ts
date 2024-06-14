@@ -5,12 +5,8 @@ import {
     ButtonStyle, 
     ActionRowBuilder, 
     ComponentType, 
-    ModalBuilder, 
-    TextInputBuilder,
-    TextInputStyle, 
     ButtonComponent,
-    ModalSubmitInteraction,
-    inlineCode,
+    codeBlock,
 } from 'discord.js'
 
 import { request } from 'undici'
@@ -19,16 +15,28 @@ import { SlashCommand } from '../../@types/client'
 import { LeaderboardData, UserData } from '../../@types/search'
 
 function createEmbed(data: UserData): EmbedBuilder {
-    const rank_color = [0xEA6500, 0xD9D9D9, 0xEBB259, 0xC9E3E7, 0x54EBE8];
+    const rank_color = [
+        { embed: 0xEA6500, text: '[0;33m' },
+        { embed: 0xD9D9D9, text: '[1;37m' },
+        { embed: 0xEBB259, text: '[1;33m' },
+        { embed: 0xC9E3E7, text: '[1;36m' },
+        { embed: 0x54EBE8, text: '[1;34m' },
+        { embed: 0xFF0033, text: '[1;31m' }
+    ];
+
+    const rankColorIndex = Math.floor((data.leagueNumber - 1) / 4)
 
     return new EmbedBuilder()
-        .setColor(rank_color[Math.floor((data.leagueNumber - 1) / 4)])
+        .setColor(rank_color[rankColorIndex].embed)
         .setTitle(`${data.name}`)
         .setThumbnail(`https://storage.googleapis.com/embark-discovery-leaderboard/img/thumbs/${data.league.toLowerCase().replaceAll(" ", "-")}-thumb.png`)
         .addFields(
-            { name: '랭크', value: inlineCode(`${data.league}`), inline: true },
-            { name: '순위', value: inlineCode(`${data.rank}`), inline: true },
-            { name: '변동률', value: inlineCode(`${(data.change > 0) ? ("+"+data.change) : data.change}`), inline: true },
+            { name: '\u200C\u000A랭크 정보', value: codeBlock("ANSI", `\u001b${rank_color[rankColorIndex].text + data.league } ( ${data.rankScore.toLocaleString(
+                undefined,
+                { minimumFractionDigits: 0 }
+            )}RR )`) + "\u200C\u000A" },
+            { name: '═══•°• 순위 •°•═══', value: codeBlock(`${data.rank}`), inline: true },
+            { name: '══•°• 변동률 •°•══', value: codeBlock("diff", `${(data.change > 0) ? ("+"+data.change) : data.change}`), inline: true },
         )
         .setFooter({ text: `TheFinals-CNS`, iconURL: `https://cdn.discordapp.com/avatars/1219832567570890833/889af2fc8b96fc95cf833a4395092813.webp?size=1024` })
         .setTimestamp()
@@ -85,7 +93,7 @@ const command: SlashCommand = {
             name_tag = '';
         }
 
-        const result = await request(`https://api.the-finals-leaderboard.com/v1/leaderboard/s2/crossplay?name=${name_tag}`);
+        const result = await request(`https://api.the-finals-leaderboard.com/v1/leaderboard/s3/crossplay?name=${name_tag}`);
         const json = await result.body.json();
 
         const leaderboardData: LeaderboardData = json as LeaderboardData;

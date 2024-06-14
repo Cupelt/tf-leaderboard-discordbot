@@ -11,13 +11,13 @@ export interface LeaderboardMeta {
 export interface UserData {
     rank: number;
     change: number;
-    leagueNumber: number;
-    league: string;
     name: string;
     steamName: string;
     xboxName: string;
     psnName: string;
-    cashouts: number;
+    leagueNumber: number;
+    league: string
+    rankScore: number;
 }
   
 export interface LeaderboardData {
