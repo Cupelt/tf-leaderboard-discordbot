@@ -34,7 +34,7 @@ function createEmbed(data: UserData): EmbedBuilder {
             { name: '\u200C\u000A랭크 정보', value: codeBlock("ANSI", `\u001b${rank_color[rankColorIndex].text + data.league } ( ${data.rankScore.toLocaleString(
                 undefined,
                 { minimumFractionDigits: 0 }
-            )}RR )`) + "\u200C\u000A" },
+            )}RS )`) + "\u200C\u000A" },
             { name: '═══•°• 순위 •°•═══', value: codeBlock(`${data.rank}`), inline: true },
             { name: '══•°• 변동률 •°•══', value: codeBlock("diff", `${(data.change > 0) ? ("+"+data.change) : data.change}`), inline: true },
         )
