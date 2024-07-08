@@ -29,7 +29,7 @@ function createEmbed(data: UserData): EmbedBuilder {
     return new EmbedBuilder()
         .setColor(rank_color[rankColorIndex].embed)
         .setTitle(`${data.name}`)
-        .setThumbnail(`https://storage.googleapis.com/embark-discovery-leaderboard/img/thumbs/${data.league.toLowerCase().replaceAll(" ", "-")}-thumb.png`)
+        .setThumbnail(`https://id.embark.games/images/leaderboards/leagues/${data.league.toLowerCase().replaceAll(" ", "-")}.png`)
         .addFields(
             { name: '\u200C\u000A랭크 정보', value: codeBlock("ANSI", `\u001b${rank_color[rankColorIndex].text + data.league } ( ${data.rankScore.toLocaleString(
                 undefined,
